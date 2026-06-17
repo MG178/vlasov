@@ -1,0 +1,399 @@
+<Window x:Class="FastDelivery.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="FastDelivery" Height="900" Width="1420" MinHeight="760" MinWidth="1180" WindowStartupLocation="CenterScreen">
+    <DockPanel Margin="14">
+        <Border DockPanel.Dock="Top" Background="{StaticResource SurfaceBrush}" CornerRadius="18" BorderBrush="{StaticResource BorderBrushSoft}" BorderThickness="1" Padding="16" Margin="0,0,0,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Text="FastDelivery" FontSize="24" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}"/>
+                    <TextBlock x:Name="RoleText" FontSize="15" FontWeight="SemiBold" Margin="0,6,0,0"/>
+                    <TextBlock x:Name="UserText" Foreground="#62707D" Margin="0,2,0,0"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Content="Обновить" Click="ReloadAll_Click"/>
+                    <Button Content="Отметить все уведомления" Click="MarkAllNotificationsRead_Click"/>
+                    <Button Content="Выйти" Click="Logout_Click" Background="#E11D48" BorderBrush="#BE123C"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <TabControl x:Name="MainTabs">
+            <TabItem Header="Заказы" x:Name="OrdersTab">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <Grid Margin="4">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="240"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1.3*"/>
+                            <ColumnDefinition Width="1*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <WrapPanel Grid.Row="0" Grid.ColumnSpan="2" Margin="0,0,0,8" VerticalAlignment="Center">
+                            <Button Content="Новый" Click="NewOrder_Click"/>
+                            <Button Content="Сохранить" Click="SaveOrder_Click"/>
+                            <Button Content="Удалить" Click="DeleteOrder_Click"/>
+                            <Button Content="Назначить" Click="AssignCourier_Click"/>
+                            <Button Content="В работу" Click="StartTransit_Click"/>
+                            <Button Content="На адресе" Click="ArriveRecipient_Click"/>
+                            <Button Content="Доставлено" Click="DeliverOrder_Click"/>
+                            <Button Content="Отменить" Click="CancelOrder_Click"/>
+                            <Separator Width="14" Opacity="0"/>
+                            <TextBlock Text="Фильтр статуса:" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                            <ComboBox x:Name="OrderStatusFilterBox" Width="160" SelectionChanged="OrderFilter_Changed"/>
+                            <TextBlock Text="Поиск:" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                            <TextBox x:Name="OrderSearchBox" Width="220" TextChanged="OrderFilter_Changed"/>
+                        </WrapPanel>
+
+                        <DataGrid x:Name="OrdersGrid" Grid.Row="1" Grid.Column="0" SelectionChanged="OrdersGrid_SelectionChanged">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="ID" Binding="{Binding OrderId}" Width="60"/>
+                                <DataGridTextColumn Header="Трек" Binding="{Binding TrackingNumber}" Width="110"/>
+                                <DataGridTextColumn Header="Клиент" Binding="{Binding ClientName}" Width="160"/>
+                                <DataGridTextColumn Header="Получатель" Binding="{Binding RecipientName}" Width="160"/>
+                                <DataGridTextColumn Header="Груз" Binding="{Binding CargoTypeName}" Width="140"/>
+                                <DataGridTextColumn Header="Вес" Binding="{Binding Weight}" Width="70"/>
+                                <DataGridTextColumn Header="Статус" Binding="{Binding Status}" Width="110"/>
+                                <DataGridTextColumn Header="Курьер" Binding="{Binding CourierName}" Width="150"/>
+                                <DataGridTextColumn Header="Стоимость" Binding="{Binding TotalCost}" Width="90"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <Border Grid.Row="1" Grid.Column="1" Margin="10,0,0,0" Background="{StaticResource SurfaceBrush}" CornerRadius="14" BorderBrush="{StaticResource BorderBrushSoft}" BorderThickness="1" Padding="12">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel>
+                                    <TextBlock Text="Карточка заказа" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                    <UniformGrid Columns="2">
+                                        <StackPanel>
+                                            <TextBlock Text="Заказ ID"/>
+                                            <TextBox x:Name="OrderIdBox" IsReadOnly="True"/>
+                                        </StackPanel>
+                                        <StackPanel>
+                                            <TextBlock Text="Трек-номер"/>
+                                            <TextBox x:Name="TrackingBox" IsReadOnly="True"/>
+                                        </StackPanel>
+                                        <StackPanel>
+                                            <TextBlock Text="Клиент"/>
+                                            <ComboBox x:Name="ClientBox" DisplayMemberPath="DisplayName" SelectedValuePath="ClientId"/>
+                                        </StackPanel>
+                                        <StackPanel>
+                                            <TextBlock Text="Курьер"/>
+                                            <ComboBox x:Name="CourierBox" DisplayMemberPath="DisplayName" SelectedValuePath="CourierId"/>
+                                        </StackPanel>
+                                        <StackPanel>
+                                            <TextBlock Text="Зона"/>
+                                            <ComboBox x:Name="ZoneBox" DisplayMemberPath="ZoneName" SelectedValuePath="ZoneId" SelectionChanged="OrderCost_Recalculate"/>
+                                        </StackPanel>
+                                        <StackPanel>
+                                            <TextBlock Text="Тип груза"/>
+                                            <ComboBox x:Name="CargoBox" DisplayMemberPath="Name" SelectedValuePath="CargoTypeId" SelectionChanged="OrderCost_Recalculate"/>
+                                        </StackPanel>
+                                        <StackPanel>
+                                            <TextBlock Text="Вес, кг"/>
+                                            <TextBox x:Name="WeightBox" TextChanged="OrderCost_Recalculate"/>
+                                        </StackPanel>
+                                        <StackPanel>
+                                            <TextBlock Text="Объем"/>
+                                            <TextBox x:Name="VolumeBox"/>
+                                        </StackPanel>
+                                        <StackPanel>
+                                            <TextBlock Text="Получатель"/>
+                                            <TextBox x:Name="RecipientNameBox"/>
+                                        </StackPanel>
+                                        <StackPanel>
+                                            <TextBlock Text="Телефон"/>
+                                            <TextBox x:Name="RecipientPhoneBox"/>
+                                        </StackPanel>
+                                    </UniformGrid>
+                                    <StackPanel>
+                                        <TextBlock Text="Адрес получателя"/>
+                                        <TextBox x:Name="RecipientAddressBox"/>
+                                    </StackPanel>
+                                    <StackPanel>
+                                        <TextBlock Text="Адрес забора"/>
+                                        <TextBox x:Name="PickupAddressBox"/>
+                                    </StackPanel>
+                                    <StackPanel>
+                                        <TextBlock Text="Адрес доставки"/>
+                                        <TextBox x:Name="DeliveryAddressBox"/>
+                                    </StackPanel>
+                                    <UniformGrid Columns="2">
+                                        <StackPanel>
+                                            <TextBlock Text="Желаемая дата"/>
+                                            <DatePicker x:Name="DesiredDateBox"/>
+                                        </StackPanel>
+                                        <StackPanel>
+                                            <TextBlock Text="Стоимость"/>
+                                            <TextBox x:Name="CostBox" IsReadOnly="True"/>
+                                        </StackPanel>
+                                    </UniformGrid>
+                                    <CheckBox x:Name="UrgentBox" Content="Срочный заказ" Checked="OrderCost_Recalculate" Unchecked="OrderCost_Recalculate"/>
+                                    <StackPanel>
+                                        <TextBlock Text="Комментарий"/>
+                                        <TextBox x:Name="NotesBox" AcceptsReturn="True" Height="84" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Border>
+
+                        <Border Grid.Row="2" Grid.ColumnSpan="2" Margin="0,10,0,0" Background="{StaticResource SurfaceBrush}" CornerRadius="14" BorderBrush="{StaticResource BorderBrushSoft}" BorderThickness="1" Padding="10">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1.5*"/>
+                                    <ColumnDefinition Width="1*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="История статусов" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                    <DataGrid x:Name="HistoryGrid" Height="180">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="Когда" Binding="{Binding ChangedAt}" Width="160"/>
+                                            <DataGridTextColumn Header="Статус" Binding="{Binding Status}" Width="120"/>
+                                            <DataGridTextColumn Header="Комментарий" Binding="{Binding Comment}" Width="*"/>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                                    <TextBlock Text="Сводка по заказу" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                    <TextBlock x:Name="SelectedOrderSummary" TextWrapping="Wrap" LineHeight="22"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <TextBlock Grid.Row="3" Grid.ColumnSpan="2" x:Name="OrdersInfoText" Margin="4,10,4,0" Foreground="#506070" TextWrapping="Wrap"/>
+                    </Grid>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="Курьеры" x:Name="CouriersTab">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <Grid Margin="4">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1.1*"/>
+                            <ColumnDefinition Width="1*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <WrapPanel Grid.Row="0" Grid.ColumnSpan="2" Margin="0,0,0,8">
+                            <Button Content="Новый" Click="NewCourier_Click"/>
+                            <Button Content="Сохранить" Click="SaveCourier_Click"/>
+                            <Button Content="Удалить" Click="DeleteCourier_Click"/>
+                            <Button Content="Обновить" Click="ReloadAll_Click"/>
+                        </WrapPanel>
+
+                        <DataGrid x:Name="CouriersGrid" Grid.Row="1" Grid.Column="0" SelectionChanged="CouriersGrid_SelectionChanged">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="ID" Binding="{Binding CourierId}" Width="60"/>
+                                <DataGridTextColumn Header="Курьер" Binding="{Binding DisplayName}" Width="180"/>
+                                <DataGridTextColumn Header="Транспорт" Binding="{Binding TransportType}" Width="100"/>
+                                <DataGridTextColumn Header="Зона" Binding="{Binding ZoneId}" Width="60"/>
+                                <DataGridTextColumn Header="График" Binding="{Binding WorkSchedule}" Width="*"/>
+                                <DataGridTextColumn Header="Рейтинг" Binding="{Binding Rating}" Width="80"/>
+                                <DataGridTextColumn Header="Активных" Binding="{Binding ActiveOrders}" Width="80"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <Border Grid.Row="1" Grid.Column="1" Margin="10,0,0,0" Background="{StaticResource SurfaceBrush}" CornerRadius="14" BorderBrush="{StaticResource BorderBrushSoft}" BorderThickness="1" Padding="12">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel>
+                                    <TextBlock Text="Карточка курьера" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                    <UniformGrid Columns="2">
+                                        <StackPanel>
+                                            <TextBlock Text="Courier ID"/>
+                                            <TextBox x:Name="CourierIdBox" IsReadOnly="True"/>
+                                        </StackPanel>
+                                        <StackPanel>
+                                            <TextBlock Text="ФИО"/>
+                                            <TextBox x:Name="CourierNameBox"/>
+                                        </StackPanel>
+                                        <StackPanel>
+                                            <TextBlock Text="Логин"/>
+                                            <TextBox x:Name="CourierLoginBox"/>
+                                        </StackPanel>
+                                        <StackPanel>
+                                            <TextBlock Text="Пароль"/>
+                                            <TextBox x:Name="CourierPasswordBox"/>
+                                        </StackPanel>
+                                        <StackPanel>
+                                            <TextBlock Text="Email"/>
+                                            <TextBox x:Name="CourierEmailBox"/>
+                                        </StackPanel>
+                                        <StackPanel>
+                                            <TextBlock Text="Телефон"/>
+                                            <TextBox x:Name="CourierPhoneBox"/>
+                                        </StackPanel>
+                                        <StackPanel>
+                                            <TextBlock Text="Зона"/>
+                                            <ComboBox x:Name="CourierZoneBox" DisplayMemberPath="ZoneName" SelectedValuePath="ZoneId"/>
+                                        </StackPanel>
+                                        <StackPanel>
+                                            <TextBlock Text="Транспорт"/>
+                                            <ComboBox x:Name="CourierTransportBox"/>
+                                        </StackPanel>
+                                    </UniformGrid>
+                                    <StackPanel>
+                                        <TextBlock Text="Номер ТС"/>
+                                        <TextBox x:Name="VehicleNumberBox"/>
+                                    </StackPanel>
+                                    <StackPanel>
+                                        <TextBlock Text="График"/>
+                                        <TextBox x:Name="WorkScheduleBox"/>
+                                    </StackPanel>
+                                    <StackPanel>
+                                        <TextBlock Text="Рейтинг"/>
+                                        <TextBox x:Name="RatingBox"/>
+                                    </StackPanel>
+                                    <TextBlock x:Name="CourierHintText" Foreground="#506070" TextWrapping="Wrap" Margin="0,10,0,0"/>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Border>
+                    </Grid>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="Справочники" x:Name="CatalogsTab">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <Grid Margin="4">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="1*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <WrapPanel Grid.Row="0" Grid.ColumnSpan="2" Margin="0,0,0,8">
+                            <Button Content="Сохранить справочники" Click="SaveCatalogs_Click"/>
+                            <Button Content="Обновить" Click="ReloadAll_Click"/>
+                        </WrapPanel>
+
+                        <GroupBox Header="Зоны доставки" Grid.Row="1" Grid.Column="0" Margin="0,0,8,0">
+                            <DataGrid x:Name="ZonesGrid" IsReadOnly="False">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="ID" Binding="{Binding ZoneId}" Width="60" IsReadOnly="True"/>
+                                    <DataGridTextColumn Header="Зона" Binding="{Binding ZoneName}" Width="*"/>
+                                    <DataGridTextColumn Header="Город" Binding="{Binding City}" Width="*"/>
+                                    <DataGridTextColumn Header="Коэффициент" Binding="{Binding Coefficient}" Width="100"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </GroupBox>
+
+                        <GroupBox Header="Тарифы" Grid.Row="1" Grid.Column="1" Margin="8,0,0,0">
+                            <DataGrid x:Name="TariffsGrid" IsReadOnly="False">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="ID" Binding="{Binding TariffId}" Width="60" IsReadOnly="True"/>
+                                    <DataGridTextColumn Header="CargoTypeID" Binding="{Binding CargoTypeId}" Width="90"/>
+                                    <DataGridTextColumn Header="ZoneID" Binding="{Binding ZoneId}" Width="70"/>
+                                    <DataGridTextColumn Header="Цена/кг" Binding="{Binding PricePerKg}" Width="80"/>
+                                    <DataGridTextColumn Header="Цена/км" Binding="{Binding PricePerKm}" Width="80"/>
+                                    <DataGridTextColumn Header="Срочность" Binding="{Binding UrgentMarkup}" Width="90"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </GroupBox>
+                    </Grid>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="Отчеты" x:Name="ReportsTab">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <Grid Margin="4">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <WrapPanel>
+                            <Button Content="Обновить" Click="ReloadReports_Click"/>
+                            <Button Content="Экспорт CSV" Click="ExportReport_Click"/>
+                        </WrapPanel>
+
+                        <UniformGrid Grid.Row="1" Columns="4" Margin="0,8,0,12">
+                            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12" BorderBrush="{StaticResource BorderBrushSoft}" BorderThickness="1" Padding="12" Margin="4">
+                                <StackPanel>
+                                    <TextBlock Text="Всего заказов" Foreground="#667085"/>
+                                    <TextBlock x:Name="TotalOrdersText" FontSize="24" FontWeight="Bold"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12" BorderBrush="{StaticResource BorderBrushSoft}" BorderThickness="1" Padding="12" Margin="4">
+                                <StackPanel>
+                                    <TextBlock Text="В работе" Foreground="#667085"/>
+                                    <TextBlock x:Name="ActiveOrdersText" FontSize="24" FontWeight="Bold"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12" BorderBrush="{StaticResource BorderBrushSoft}" BorderThickness="1" Padding="12" Margin="4">
+                                <StackPanel>
+                                    <TextBlock Text="Доставлено" Foreground="#667085"/>
+                                    <TextBlock x:Name="DeliveredOrdersText" FontSize="24" FontWeight="Bold"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12" BorderBrush="{StaticResource BorderBrushSoft}" BorderThickness="1" Padding="12" Margin="4">
+                                <StackPanel>
+                                    <TextBlock Text="Выручка" Foreground="#667085"/>
+                                    <TextBlock x:Name="RevenueText" FontSize="24" FontWeight="Bold"/>
+                                </StackPanel>
+                            </Border>
+                        </UniformGrid>
+
+                        <Grid Grid.Row="2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1.2*"/>
+                                <ColumnDefinition Width="0.8*"/>
+                            </Grid.ColumnDefinitions>
+                            <DataGrid x:Name="EfficiencyGrid" Grid.Column="0">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Курьер" Binding="{Binding CourierName}" Width="*"/>
+                                    <DataGridTextColumn Header="Доставок" Binding="{Binding TotalDeliveries}" Width="90"/>
+                                    <DataGridTextColumn Header="Среднее, мин" Binding="{Binding AverageMinutes}" Width="110"/>
+                                    <DataGridTextColumn Header="Просрочек" Binding="{Binding LateDeliveries}" Width="90"/>
+                                    <DataGridTextColumn Header="Рейтинг" Binding="{Binding Rating}" Width="70"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+
+                            <DataGrid x:Name="StatusSummaryGrid" Grid.Column="1" Margin="10,0,0,0">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Статус" Binding="{Binding Status}" Width="*"/>
+                                    <DataGridTextColumn Header="Кол-во" Binding="{Binding Count}" Width="80"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Grid>
+                    </Grid>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="Уведомления" x:Name="NotificationsTab">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <Grid Margin="4">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <WrapPanel>
+                            <Button Content="Обновить" Click="ReloadAll_Click"/>
+                            <Button Content="Прочитать выбранное" Click="MarkSelectedNotificationRead_Click"/>
+                        </WrapPanel>
+                        <DataGrid x:Name="NotificationsGrid" Grid.Row="1" SelectionChanged="NotificationsGrid_SelectionChanged">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="ID" Binding="{Binding NotificationId}" Width="60"/>
+                                <DataGridTextColumn Header="Сообщение" Binding="{Binding Text}" Width="*"/>
+                                <DataGridTextColumn Header="Когда" Binding="{Binding CreatedAt}" Width="150"/>
+                                <DataGridCheckBoxColumn Header="Прочитано" Binding="{Binding IsRead}" Width="90"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
+    </DockPanel>
+</Window>
