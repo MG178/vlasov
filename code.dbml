@@ -1,0 +1,197 @@
+// ======================================================================
+// DBML код для базы данных "ExpressLog" (ИС автоматизации курьерской доставки)
+// Исправленная версия для dbdiagram.io
+// ======================================================================
+
+// --------------------------------------
+// Таблица Users (пользователи)
+// --------------------------------------
+Table Users {
+  user_id int [pk, increment, note: 'IDENTITY(1,1)']
+  full_name nvarchar(200) [not null]
+  email nvarchar(100) [not null, unique, note: 'CHECK (email LIKE \'%_@__%.__%\')']
+  phone nvarchar(20) [not null, unique, note: 'CHECK (phone LIKE \'+%\' AND LEN(phone) BETWEEN 10 AND 15)']
+  password_hash nvarchar(256) [not null]
+  role nvarchar(20) [not null, note: 'CHECK (role IN (\'Client\', \'Courier\', \'Dispatcher\', \'Admin\'))']
+  is_active bit [not null, default: true]
+  registration_date datetime2 [not null, default: `getdate()`]
+}
+
+// --------------------------------------
+// Таблица Clients (клиенты, расширение Users)
+// --------------------------------------
+Table Clients {
+  client_id int [pk]
+  user_id int [not null, unique, note: 'FK -> Users.user_id (ON DELETE CASCADE)']
+  legal_address nvarchar(200) [null]
+  client_type nvarchar(20) [not null, note: 'CHECK (client_type IN (\'Individual\', \'LegalEntity\'))']
+  inn nvarchar(20) [null]
+}
+
+// --------------------------------------
+// Таблица Zones (зоны доставки)
+// --------------------------------------
+Table Zones {
+  zone_id int [pk, increment]
+  zone_name nvarchar(100) [not null]
+  city nvarchar(100) [not null]
+  coefficient decimal(5,2) [not null, note: 'CHECK (coefficient >= 0)']
+}
+
+// --------------------------------------
+// Таблица CargoTypes (типы грузов)
+// --------------------------------------
+Table CargoTypes {
+  cargo_type_id int [pk, increment]
+  name nvarchar(100) [not null]
+  max_weight decimal(8,2) [not null, note: 'CHECK (max_weight > 0)']
+  is_fragile bit [not null, default: false]
+}
+
+// --------------------------------------
+// Таблица Couriers (курьеры, расширение Users)
+// --------------------------------------
+Table Couriers {
+  courier_id int [pk]
+  user_id int [not null, unique, note: 'FK -> Users.user_id (ON DELETE CASCADE)']
+  transport_type nvarchar(20) [not null, note: 'CHECK (transport_type IN (\'Auto\', \'OnFoot\', \'Bicycle\'))']
+  vehicle_number nvarchar(20) [null]
+  zone_id int [not null, note: 'FK -> Zones.zone_id (ON DELETE NO ACTION)']
+  work_schedule nvarchar(100) [null]
+  rating decimal(3,2) [null, default: 0, note: 'CHECK (rating BETWEEN 0 AND 5)']
+}
+
+// --------------------------------------
+// Таблица Tariffs (тарифы)
+// --------------------------------------
+Table Tariffs {
+  tariff_id int [pk, increment]
+  cargo_type_id int [not null, note: 'FK -> CargoTypes.cargo_type_id (ON DELETE CASCADE)']
+  zone_id int [not null, note: 'FK -> Zones.zone_id (ON DELETE CASCADE)']
+  price_per_kg decimal(10,2) [not null, note: 'CHECK (price_per_kg >= 0)']
+  price_per_km decimal(10,2) [not null, note: 'CHECK (price_per_km >= 0)']
+  surcharge_urgent decimal(10,2) [not null, default: 0, note: 'CHECK (surcharge_urgent >= 0)']
+  indexes {
+    (cargo_type_id, zone_id) [unique, name: 'UQ_Tariffs_Unique']
+  }
+}
+
+// --------------------------------------
+// Таблица Orders (заказы)
+// --------------------------------------
+Table Orders {
+  order_id int [pk, increment]
+  client_id int [not null, note: 'FK -> Clients.client_id (ON DELETE NO ACTION)']
+  zone_id int [not null, note: 'FK -> Zones.zone_id (ON DELETE NO ACTION)']
+  recipient_name nvarchar(200) [not null]
+  recipient_phone nvarchar(20) [not null]
+  recipient_address nvarchar(250) [not null]
+  cargo_type_id int [not null, note: 'FK -> CargoTypes.cargo_type_id (ON DELETE NO ACTION)']
+  weight decimal(8,2) [not null, note: 'CHECK (weight > 0)']
+  volume decimal(8,2) [null]
+  pickup_address nvarchar(250) [not null]
+  delivery_address nvarchar(250) [not null]
+  is_urgent bit [not null, default: false]
+  created_date datetime2 [not null, default: `getdate()`]
+  desired_delivery_date date [null]
+  status nvarchar(20) [not null, default: 'New', note: 'CHECK (status IN (\'New\', \'Assigned\', \'Taken\', \'InTransit\', \'AtRecipient\', \'Delivered\', \'Cancelled\'))']
+  assigned_courier_id int [null, note: 'FK -> Couriers.courier_id (ON DELETE SET NULL)']
+  dispatcher_id int [null, note: 'FK -> Users.user_id (ON DELETE SET NULL)']
+  total_cost decimal(10,2) [not null, note: 'CHECK (total_cost >= 0)']
+  tracking_number nvarchar(20) [not null, unique]
+}
+
+// --------------------------------------
+// Таблица DeliverySessions (сессии доставки)
+// --------------------------------------
+Table DeliverySessions {
+  session_id int [pk, increment]
+  order_id int [not null, note: 'FK -> Orders.order_id (ON DELETE CASCADE)']
+  generated_date datetime2 [not null, default: `getdate()`]
+  token nvarchar(100) [not null, unique]
+  start_time datetime2 [not null]
+  end_time datetime2 [null]
+  status nvarchar(20) [not null, default: 'Active', note: 'CHECK (status IN (\'Active\', \'Used\', \'Expired\'))']
+}
+
+// --------------------------------------
+// Таблица OrderStatusHistory (история статусов)
+// --------------------------------------
+Table OrderStatusHistory {
+  history_id int [pk, increment]
+  order_id int [not null, note: 'FK -> Orders.order_id (ON DELETE CASCADE)']
+  status nvarchar(20) [not null, note: 'CHECK (status IN (\'New\', \'Assigned\', \'Taken\', \'InTransit\', \'AtRecipient\', \'Delivered\', \'Cancelled\'))']
+  change_date datetime2 [not null, default: `getdate()`]
+  latitude decimal(10,7) [null]
+  longitude decimal(10,7) [null]
+  comment nvarchar(500) [null]
+}
+
+// --------------------------------------
+// Таблица DeliveryConfirmations (подтверждения доставки)
+// --------------------------------------
+Table DeliveryConfirmations {
+  confirmation_id int [pk, increment]
+  session_id int [not null, note: 'FK -> DeliverySessions.session_id (ON DELETE CASCADE)']
+  order_id int [not null, unique, note: 'FK -> Orders.order_id (ON DELETE CASCADE), один заказ – одно подтверждение']
+  scan_time datetime2 [not null, default: `getdate()`]
+  latitude decimal(10,7) [null]
+  longitude decimal(10,7) [null]
+  ip_address nvarchar(45) [null]
+  status nvarchar(20) [not null, note: 'CHECK (status IN (\'QR\', \'Manual\'))']
+  photo_path nvarchar(500) [null]
+}
+
+// --------------------------------------
+// Таблица Notifications (уведомления)
+// --------------------------------------
+Table Notifications {
+  notification_id int [pk, increment]
+  user_id int [not null, note: 'FK -> Users.user_id (ON DELETE CASCADE)']
+  text nvarchar(500) [not null]
+  date datetime2 [not null, default: `getdate()`]
+  is_read bit [not null, default: false]
+}
+
+// --------------------------------------
+// Таблица RouteLists (маршрутные листы)
+// --------------------------------------
+Table RouteLists {
+  route_list_id int [pk, increment]
+  courier_id int [not null, note: 'FK -> Couriers.courier_id (ON DELETE CASCADE)']
+  date date [not null]
+}
+
+// --------------------------------------
+// Таблица RouteListOrders (связь заказов с маршрутными листами)
+// --------------------------------------
+Table RouteListOrders {
+  route_list_id int [not null, note: 'FK -> RouteLists.route_list_id (ON DELETE CASCADE)']
+  order_id int [not null, note: 'FK -> Orders.order_id (ON DELETE CASCADE)']
+  sequence_number int [not null]
+  indexes {
+    (route_list_id, order_id) [pk]
+  }
+}
+
+// ======================================
+// Связи (Foreign Keys) – для наглядности
+// ======================================
+Ref: Clients.user_id > Users.user_id [delete: cascade]
+Ref: Couriers.user_id > Users.user_id [delete: cascade]
+Ref: Couriers.zone_id > Zones.zone_id
+Ref: Tariffs.cargo_type_id > CargoTypes.cargo_type_id [delete: cascade]
+Ref: Tariffs.zone_id > Zones.zone_id [delete: cascade]
+Ref: Orders.client_id > Clients.client_id
+Ref: Orders.zone_id > Zones.zone_id
+Ref: Orders.assigned_courier_id > Couriers.courier_id [delete: set null]
+Ref: Orders.dispatcher_id > Users.user_id [delete: set null]
+Ref: Orders.cargo_type_id > CargoTypes.cargo_type_id
+Ref: DeliverySessions.order_id > Orders.order_id [delete: cascade]
+Ref: OrderStatusHistory.order_id > Orders.order_id [delete: cascade]
+Ref: DeliveryConfirmations.session_id > DeliverySessions.session_id [delete: cascade]
+Ref: DeliveryConfirmations.order_id > Orders.order_id [delete: cascade]
+Ref: Notifications.user_id > Users.user_id [delete: cascade]
+Ref: RouteLists.courier_id > Couriers.courier_id [delete: cascade]
+Ref: RouteListOrders.route_list_id > RouteLists.route_list_id [delete: cascade]
+Ref: RouteListOrders.order_id > Orders.order_id [delete: cascade]
