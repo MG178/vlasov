@@ -1,0 +1,293 @@
+@startuml
+title Последовательность работы системы «ExpressLog» (без QR-кодов)
+
+actor Клиент
+actor Курьер
+actor Диспетчер
+
+participant "Клиентское приложение" as UI
+participant "Бизнес-логика" as Logic
+database "БД (MS SQL Server)" as DB
+
+== 1. Создание заказа ==
+
+
+Клиент -> UI: Заполняет форму заказа
+activate Клиент
+activate UI
+UI -> Logic: Запрос справочников (типы грузов, тарифы)
+activate Logic
+Logic -> DB: SELECT CargoTypes, Tariffs
+activate DB
+DB --> Logic: Данные
+deactivate DB
+Logic --> UI: Справочники
+deactivate Logic
+UI --> Клиент: Форма с опциями
+deactivate Клиент
+deactivate UI
+
+Клиент -> UI: Нажимает «Создать заказ»
+activate Клиент
+activate UI
+UI -> Logic: Данные заказа
+activate Logic
+Logic -> Logic: Генерация трек-номера
+Logic -> DB: INSERT INTO Orders (Status='New')
+activate DB
+DB --> Logic: OrderID
+deactivate DB
+Logic -> DB: INSERT INTO OrderStatusHistory (Status='New')
+activate DB
+DB --> Logic: OK
+deactivate DB
+Logic -> DB: INSERT INTO Notifications (диспетчеру)
+activate DB
+DB --> Logic: OK
+deactivate DB
+Logic --> UI: Успешно, трек-номер
+deactivate Logic
+UI --> Клиент: Отображён трек-номер
+deactivate UI
+deactivate Клиент
+
+== 2. Назначение курьера ==
+
+Диспетчер -> UI: Открывает дашборд
+activate Диспетчер
+activate UI
+UI -> Logic: Проверка роли
+activate Logic
+Logic -> DB: SELECT из Users
+activate DB
+DB --> Logic: Доступ
+deactivate DB
+Logic --> UI: Доступ разрешён
+deactivate Logic
+UI -> Logic: Запрос заказов со статусом 'New'
+activate Logic
+Logic -> DB: SELECT * FROM Orders WHERE Status='New'
+activate DB
+DB --> Logic: Список
+deactivate DB
+Logic --> UI: Данные
+deactivate Logic
+UI --> Диспетчер: Список новых заказов
+deactivate Диспетчер
+deactivate UI
+
+Диспетчер -> UI: Выбирает заказ → «Назначить курьера»
+activate Диспетчер
+activate UI
+UI -> Logic: Вызов usp_AssignCourier
+activate Logic
+Logic -> DB: EXEC usp_AssignCourier
+activate DB
+DB -> DB: Поиск свободного курьера
+DB -> DB: UPDATE Orders SET Status='Assigned', AssignedCourierID=...
+DB -> DB: INSERT INTO OrderStatusHistory (Status='Assigned')
+DB -> DB: INSERT INTO Notifications (курьеру)
+DB --> Logic: CourierID
+deactivate DB
+Logic --> UI: Курьер назначен
+deactivate Logic
+UI --> Диспетчер: Подтверждение
+deactivate UI
+deactivate Диспетчер
+
+== 3. Работа курьера ==
+
+
+Курьер -> UI: Открывает список заказов
+activate Курьер
+activate UI
+UI -> Logic: Запрос заказов по курьеру
+activate Logic
+Logic -> DB: SELECT * FROM Orders WHERE AssignedCourierID=@ID
+activate DB
+DB --> Logic: Список
+deactivate DB
+Logic --> UI: Данные
+deactivate Logic
+UI --> Курьер: Список заказов
+deactivate Курьер
+deactivate UI
+
+Курьер -> UI: Нажимает «Взять заказ» (Status='Taken')
+activate Курьер
+activate UI
+UI -> Logic: UPDATE Orders SET Status='Taken'
+activate Logic
+Logic -> DB: UPDATE ... 
+activate DB
+DB --> Logic: OK
+deactivate DB
+Logic -> DB: INSERT INTO OrderStatusHistory (Status='Taken')
+activate DB
+DB --> Logic: OK
+deactivate DB
+Logic --> UI: Подтверждение
+deactivate Logic
+UI --> Курьер: Статус обновлён
+deactivate Курьер
+deactivate UI
+
+Курьер -> UI: Нажимает «В пути» (Status='InTransit')
+activate Курьер
+activate UI
+UI -> Logic: UPDATE Orders SET Status='InTransit'
+activate Logic
+Logic -> DB: UPDATE ...
+activate DB
+DB --> Logic: OK
+deactivate DB
+Logic -> DB: INSERT INTO OrderStatusHistory
+activate DB
+DB --> Logic: OK
+deactivate DB
+Logic --> UI: OK
+deactivate Logic
+UI --> Курьер: Статус обновлён
+deactivate Курьер
+deactivate UI
+
+Курьер -> UI: Нажимает «Прибыл на место» (Status='AtRecipient')
+activate Курьер
+activate UI
+UI -> Logic: UPDATE Orders SET Status='AtRecipient'
+activate Logic
+Logic -> DB: UPDATE ...
+activate DB
+DB --> Logic: OK
+deactivate DB
+Logic -> DB: INSERT INTO OrderStatusHistory
+activate DB
+DB --> Logic: OK
+deactivate DB
+Logic --> UI: OK
+deactivate Logic
+UI --> Курьер: Статус обновлён
+deactivate Курьер
+deactivate UI
+
+== 4. Подтверждение доставки ==
+
+Курьер -> UI: Нажимает «Доставлен»
+activate Курьер
+activate UI
+UI -> Logic: Передаёт геолокацию (опционально) и фото
+activate Logic
+Logic -> DB: INSERT INTO DeliveryConfirmations (Status='Manual', PhotoPath)
+activate DB
+DB --> Logic: OK
+deactivate DB
+Logic -> DB: UPDATE Orders SET Status='Delivered'
+activate DB
+DB -> DB: Срабатывание триггера (проверка наличия подтверждения)
+DB -> DB: INSERT INTO OrderStatusHistory (Status='Delivered')
+DB --> Logic: OK
+deactivate DB
+Logic -> DB: INSERT INTO Notifications (клиенту, диспетчеру)
+activate DB
+DB --> Logic: OK
+deactivate DB
+Logic --> UI: Подтверждено
+deactivate Logic
+UI --> Курьер: Заказ доставлен
+deactivate UI
+deactivate Курьер
+
+
+Диспетчер -> UI: Выбирает заказ → «Подтвердить доставку вручную»
+activate Диспетчер
+activate UI
+UI -> Logic: Запрос ручного подтверждения
+activate Logic
+Logic -> DB: INSERT INTO DeliveryConfirmations (Status='Manual')
+activate DB
+DB --> Logic: OK
+deactivate DB
+Logic -> DB: UPDATE Orders SET Status='Delivered'
+activate DB
+DB -> DB: Триггер срабатывает
+DB --> Logic: OK
+deactivate DB
+Logic -> DB: INSERT INTO Notifications (клиенту, курьеру)
+activate DB
+DB --> Logic: OK
+deactivate DB
+Logic --> UI: Подтверждено
+deactivate Logic
+UI --> Диспетчер: Заказ доставлен
+deactivate UI
+deactivate Диспетчер
+
+
+
+
+== 5. Отслеживание заказа ==
+
+Клиент -> UI: Вводит трек-номер
+activate Клиент
+activate UI
+UI -> Logic: Запрос по TrackingNumber
+activate Logic
+Logic -> DB: SELECT * FROM Orders WHERE TrackingNumber=@TN
+activate DB
+DB --> Logic: Данные заказа
+deactivate DB
+Logic -> DB: SELECT * FROM OrderStatusHistory ORDER BY ChangeDate DESC
+activate DB
+DB --> Logic: История статусов
+deactivate DB
+Logic --> UI: Данные для отображения
+deactivate Logic
+UI --> Клиент: Отображён статус и история
+deactivate UI
+deactivate Клиент
+
+== 6. Отчётность ==
+
+Диспетчер -> UI: Открывает модуль отчетности
+activate Диспетчер
+activate UI
+UI -> Logic: Проверка прав
+activate Logic
+Logic -> DB: SELECT из Users
+activate DB
+DB --> Logic: Доступ
+deactivate DB
+Logic --> UI: Доступ разрешён
+deactivate Logic
+UI --> Диспетчер: Модуль открыт
+deactivate Диспетчер
+deactivate UI
+
+Диспетчер -> UI: Формирует отчёт «Эффективность курьеров»
+activate Диспетчер
+activate UI
+UI -> Logic: Запрос vw_CourierEfficiency
+activate Logic
+Logic -> DB: SELECT * FROM vw_CourierEfficiency
+activate DB
+DB --> Logic: Данные
+deactivate DB
+Logic --> UI: Отчёт
+deactivate Logic
+UI --> Диспетчер: Таблица с рейтингом
+deactivate Диспетчер
+deactivate UI
+
+Диспетчер -> UI: Экспорт в Excel
+activate Диспетчер
+activate UI
+UI -> Logic: Запрос на Excel
+activate Logic
+Logic -> Logic: Генерация через EPPlus
+Logic --> UI: Файл .xlsx
+deactivate Logic
+UI --> Диспетчер: Скачивание файла
+deactivate UI
+deactivate Диспетчер
+
+@enduml
