@@ -1,0 +1,90 @@
+@startuml
+' Диаграмма вариантов использования (Use Case)
+' Вертикальная группировка по ролям с прямыми линиями
+
+skinparam linetype ortho
+skinparam usecase {
+  BackgroundColor white
+  BorderColor black
+  FontColor black
+  FontSize 12
+}
+skinparam rectangle {
+  BackgroundColor #F0F8FF
+  BorderColor #4682B4
+  FontColor #000080
+  FontSize 13
+  FontStyle bold
+}
+skinparam actor {
+  BackgroundColor #E6E6FA
+  BorderColor #4B0082
+  FontColor #4B0082
+  FontSize 13
+}
+skinparam arrow {
+  Color #333
+}
+
+left to right direction
+
+' Акторы
+actor "Клиент" as Client
+actor "Курьер" as Courier
+actor "Диспетчер" as Dispatcher
+actor "Администратор" as Admin
+
+' Блоки вариантов использования по ролям
+rectangle "Клиентские функции" {
+  usecase "Создать заказ" as UC1
+  usecase "Отследить заказ по трек-номеру" as UC2
+  usecase "Просмотреть историю заказов" as UC3
+}
+
+rectangle "Функции курьера" {
+  usecase "Просмотреть назначенные заказы" as UC4
+  usecase "Изменить статус заказа" as UC5
+  usecase "Подтвердить доставку вручную" as UC6
+}
+
+rectangle "Функции диспетчера" {
+  usecase "Назначить курьера на заказ" as UC7
+  usecase "Управлять заказами (редактировать/отменять)" as UC8
+  usecase "Формировать отчеты" as UC9
+  usecase "Просматривать дашборд" as UC10
+}
+
+rectangle "Администрирование" {
+  usecase "Управлять пользователями" as UC11
+  usecase "Управлять тарифами" as UC12
+  usecase "Управлять справочниками (типы грузов, зоны)" as UC13
+}
+
+' Общий вариант использования
+usecase "Авторизоваться в системе" as UC14
+
+' Связи акторов с соответствующими блоками
+Client --> UC1
+Client --> UC2
+Client --> UC3
+
+Courier --> UC4
+Courier --> UC5
+Courier --> UC6
+
+Dispatcher --> UC7
+Dispatcher --> UC8
+Dispatcher --> UC9
+Dispatcher --> UC10
+
+Admin --> UC11
+Admin --> UC12
+Admin --> UC13
+
+' Все акторы могут авторизоваться
+Client --> UC14
+Courier --> UC14
+Dispatcher --> UC14
+Admin --> UC14
+
+@enduml
