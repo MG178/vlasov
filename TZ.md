@@ -193,8 +193,6 @@
 - **Бэкенд:** ASP.NET Core Web API (C#) с JWT-аутентификацией.
 - **Фронтенд:** На выбор студента (React.js / Vue.js / Blazor WebAssembly).
 - **Доступ к данным:** Entity Framework Core (Code-First). Использование хранимых процедур и функций через `FromSqlRaw`.
-- **Генерация QR-кодов:** QRCoder (на бэке) для генерации изображения с токеном.
-- **Сканирование QR:** Библиотеки Html5Qrcode или Instascan на фронтенде.
 - **Отчетность:** EPPlus/ClosedXML для экспорта в Excel.
 - **Архитектура:** Слоистая (Controllers → Services → Repositories → DB Context) с Dependency Injection.
 
