@@ -2,7 +2,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RouteOptimizer", "RouteOptimizer\RouteOptimizer.csproj", "{D8B3A8A6-4A78-4B32-A2F5-5C7E4EAF0B61}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FastDelivery", "FastDelivery\FastDelivery.csproj", "{D8B3A8A6-4A78-4B32-A2F5-5C7E4EAF0B61}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

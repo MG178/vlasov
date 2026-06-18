@@ -23,11 +23,14 @@
                 </StackPanel>
 
                 <StackPanel Grid.Row="1" VerticalAlignment="Center" Margin="0,14,0,0">
-                    <TextBlock Text="Что доступно в демо:" Foreground="White" FontWeight="SemiBold" FontSize="16" Margin="0,0,0,10"/>
-                    <TextBlock Text="• заказы по ролям\n• назначения курьеров\n• статусы доставки\n• каталоги зон и тарифов\n• отчеты и уведомления" Foreground="White" FontSize="15" LineHeight="28" TextWrapping="Wrap"/>
+                    <TextBlock Text="Что доступно в проекте:" Foreground="White" FontWeight="SemiBold" FontSize="16" Margin="0,0,0,10"/>
+                    <TextBlock Text="• заказы по ролям" Foreground="White" FontSize="15" LineHeight="28" TextWrapping="Wrap"/>
+                    <TextBlock Text="• назначения курьеров" Foreground="White" FontSize="15" LineHeight="28" TextWrapping="Wrap"/>
+                    <TextBlock Text="• каталоги зон и тарифов" Foreground="White" FontSize="15" LineHeight="28" TextWrapping="Wrap"/>
+                    <TextBlock Text="• отчеты и уведомления" Foreground="White" FontSize="15" LineHeight="28" TextWrapping="Wrap"/>
                 </StackPanel>
 
-                <TextBlock Grid.Row="2" Text="Без QR-кодов и внешней БД, все работает как локальный учебный MVP" Foreground="#C5F0EB" FontSize="12"/>
+                <TextBlock Grid.Row="2" Text="MVP PROJECT" Foreground="#C5F0EB" FontSize="12"/>
             </Grid>
         </Border>
 
@@ -43,7 +46,6 @@
                 </Grid.RowDefinitions>
 
                 <TextBlock Text="Вход в систему" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,14"/>
-                <TextBlock Text="Используйте demo-аккаунты: admin / dispatcher / courier1 / client1" Foreground="#51606F" TextWrapping="Wrap" Margin="0,0,0,14"/>
 
                 <StackPanel Grid.Row="1" Margin="0,0,0,8">
                     <TextBlock Text="Логин"/>
@@ -59,12 +61,6 @@
 
                 <Button Grid.Row="4" Content="Войти" HorizontalAlignment="Stretch" Height="38" Click="Login_Click"/>
 
-                <Border Grid.Row="5" Margin="0,18,0,0" Background="#F8FAFC" CornerRadius="12" Padding="14">
-                    <StackPanel>
-                        <TextBlock Text="Роли в демо" FontWeight="SemiBold" Margin="0,0,0,8"/>
-                        <TextBlock Text="Admin: admin / admin\nDispatcher: dispatcher / dispatcher\nCourier: courier1 / courier1\nClient: client1 / client1" Foreground="#52606D" LineHeight="22"/>
-                    </StackPanel>
-                </Border>
             </Grid>
         </Border>
     </Grid>
